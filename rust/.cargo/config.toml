@@ -1,0 +1,3 @@
+[build]
+# Keep artifacts under the repo so `cargo run --release` and scripts can find `./target/release/...`.
+target-dir = "target"
