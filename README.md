@@ -100,30 +100,29 @@ go build -o benchmark-go .
 
 ## Benchmark script
 
-Requires `curl` and `jq`. Start **Express (3001), Rust (3002), and Go (3003)**, then from the repo root:
+Requires `curl` and `jq`. Start **all four servers** (Express 3001, Fastify 3004, Rust 3002, Go 3003), then from the repo root:
 
 ```bash
 chmod +x run-bench.sh   # once
 ./run-bench.sh
 ```
 
-The script calls each of those three servers **5** times, **discards the first** response as warm-up, then reports **min / median / avg** of `elapsed_seconds` over the remaining **4** requests. It fails if `checksum` values differ.
-
-**Fastify (3004)** is not included in `run-bench.sh`; benchmark it manually with the same `curl` command above (run multiple times and compare `elapsed_seconds`).
+The script calls each server **5** times, **discards the first** response as warm-up, then reports **min / median / avg** of `elapsed_seconds` over the remaining **4** requests. It fails if `checksum` values differ.
 
 ## Sample results (this machine)
 
-From `./run-bench.sh` (Express, Rust, Go only):
+From `./run-bench.sh` (all four servers, default query params):
 
-| Server     | Min (s) | Median (s) | Avg (s) | Checksum        |
-| ---------- | ------- | ---------- | ------- | --------------- |
-| TypeScript (Express) | 3.577   | 3.642      | 6.560   | 4831866064556224 |
-| Rust       | 1.936   | 1.978      | 1.983   | 4831866064556224 |
-| Go         | 3.538   | 3.592      | 3.586   | 4831866064556224 |
+| Server               | Min (s) | Median (s) | Avg (s) | Checksum        |
+| -------------------- | ------- | ---------- | ------- | --------------- |
+| TypeScript (Express) | 3.534   | 3.561      | 6.253   | 4831866064556224 |
+| TypeScript (Fastify) | 3.552   | 3.561      | 6.260   | 4831866064556224 |
+| Rust                 | 1.950   | 1.953      | 1.954   | 4831866064556224 |
+| Go                   | 3.540   | 3.545      | 3.545   | 4831866064556224 |
 
-- **Recorded:** 2026-05-05  
+- **Recorded:** 2026-05-19  
 - **Hardware:** Apple Silicon (darwin 24.x), local run via `./run-bench.sh` with default query params.  
-- **Interpretation:** On this sample, **Rust** had the lowest median time; Node/V8 JIT and Go’s `net/http` handler were in a similar band for this workload. Your numbers will vary by CPU, power settings, and background load. TypeScript’s **average** can exceed the median if an occasional slow request (GC, scheduling) appears in the post–warm-up window.
+- **Interpretation:** On this sample, **Rust** had the lowest median time. **Express** and **Fastify** were effectively tied on median (~3.56s); Fastify was not faster than Express for this CPU-bound handler. Go’s `net/http` was in a similar band to Node for median, with a more stable average. TypeScript **averages** can exceed the median if an occasional slow request (GC, scheduling) appears in the post–warm-up window.
 
 ## Caveats
 

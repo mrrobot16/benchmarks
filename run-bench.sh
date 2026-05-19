@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Requires: curl, jq. Assumes servers on 3001 (TS), 3002 (Rust), 3003 (Go).
+# Requires: curl, jq. Assumes servers on 3001 (TS Express), 3004 (TS Fastify), 3002 (Rust), 3003 (Go).
 
 for cmd in curl jq; do
   if ! command -v "$cmd" &>/dev/null; then
@@ -53,15 +53,16 @@ bench_one() {
 }
 
 declare -a rows
-rows+=("$(bench_one "TypeScript" "http://127.0.0.1:3001/compute")")
+rows+=("$(bench_one "TypeScript (Express)" "http://127.0.0.1:3001/compute")")
+rows+=("$(bench_one "TypeScript (Fastify)" "http://127.0.0.1:3004/compute")")
 rows+=("$(bench_one "Rust" "http://127.0.0.1:3002/compute")")
 rows+=("$(bench_one "Go" "http://127.0.0.1:3003/compute")")
 
-printf "\n%-12s | %9s | %10s | %9s | %s\n" "Language" "Min (s)" "Median (s)" "Avg (s)" "Checksum"
-printf "%s\n" "-------------|-----------|------------|-----------|----------"
+printf "\n%-22s | %9s | %10s | %9s | %s\n" "Server" "Min (s)" "Median (s)" "Avg (s)" "Checksum"
+printf "%s\n" "----------------------|-----------|------------|-----------|----------"
 for row in "${rows[@]}"; do
   IFS='|' read -r lang min med avg chk <<<"$row"
-  printf "%-12s | %9s | %10s | %9s | %s\n" "$lang" "$min" "$med" "$avg" "$chk"
+  printf "%-22s | %9s | %10s | %9s | %s\n" "$lang" "$min" "$med" "$avg" "$chk"
 done
 
 first_chk="$(echo "${rows[0]}" | cut -d'|' -f5)"
