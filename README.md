@@ -11,6 +11,7 @@ HTTP servers expose `GET /compute` with the same **deterministic CPU-heavy workl
 | `typescript/`         | TypeScript (Node)  | Express                | 3001 | `typescript`           |
 | `typescript-fastify/` | TypeScript (Node)  | Fastify (no plugins)   | 3004 | `typescript-fastify`   |
 | `typescript-nestjs/`  | TypeScript (Node)  | NestJS (Express adapter) | 3005 | `typescript-nestjs`    |
+| `typescript-koa/`     | TypeScript (Node)  | Koa (no router plugins)  | 3006 | `typescript-koa`       |
 | `rust/`               | Rust               | Axum                   | 3002 | `rust`                 |
 | `go/`                 | Go                 | `net/http`             | 3003 | `go`                   |
 
@@ -54,7 +55,7 @@ Start a single server, then:
 curl -sS 'http://127.0.0.1:3004/compute' | jq '{language, elapsed_seconds, checksum}'
 ```
 
-Change the port to **3001** (Express), **3004** (Fastify), **3005** (NestJS), **3002** (Rust), or **3003** (Go) as needed.
+Change the port to **3001** (Express), **3004** (Fastify), **3005** (NestJS), **3006** (Koa), **3002** (Rust), or **3003** (Go) as needed.
 
 ## Run each server
 
@@ -89,6 +90,16 @@ node dist/main.js
 # or: npm run dev
 ```
 
+### TypeScript (Koa, no router plugins) — port 3006
+
+```bash
+cd typescript-koa
+npm install
+npm run build
+node dist/server.js
+# or: npm run dev
+```
+
 ### Rust (Axum) — port 3002
 
 Use a **release** build (debug is much slower). If your environment sets `CARGO_TARGET_DIR` (e.g. some IDE sandboxes), pin the binary path:
@@ -111,7 +122,7 @@ go build -o benchmark-go .
 
 ## Benchmark script
 
-Requires `curl` and `jq`. Start **all five servers** (Express 3001, Fastify 3004, NestJS 3005, Rust 3002, Go 3003), then from the repo root:
+Requires `curl` and `jq`. Start **all six servers** (Express 3001, Fastify 3004, NestJS 3005, Koa 3006, Rust 3002, Go 3003), then from the repo root:
 
 ```bash
 chmod +x run-bench.sh   # once
@@ -122,23 +133,24 @@ The script calls each server **5** times, **discards the first** response as war
 
 ## Sample results (this machine)
 
-From `./run-bench.sh` (all five servers, default query params):
+From `./run-bench.sh` (all six servers, default query params):
 
 | Server               | Min (s) | Median (s) | Avg (s) | Checksum        |
 | -------------------- | ------- | ---------- | ------- | --------------- |
-| TypeScript (Express) | 3.543   | 3.565      | 6.281   | 4831866064556224 |
-| TypeScript (Fastify) | 3.546   | 3.583      | 6.344   | 4831866064556224 |
-| TypeScript (NestJS)  | 3.553   | 3.683      | 6.365   | 4831866064556224 |
-| Rust                 | 1.950   | 1.955      | 1.954   | 4831866064556224 |
-| Go                   | 3.530   | 3.545      | 3.548   | 4831866064556224 |
+| TypeScript (Express) | 3.586   | 3.634      | 6.321   | 4831866064556224 |
+| TypeScript (Fastify) | 3.539   | 3.572      | 6.271   | 4831866064556224 |
+| TypeScript (NestJS)  | 3.548   | 3.557      | 6.257   | 4831866064556224 |
+| TypeScript (Koa)     | 3.547   | 3.550      | 6.248   | 4831866064556224 |
+| Rust                 | 1.952   | 1.957      | 1.956   | 4831866064556224 |
+| Go                   | 3.545   | 3.559      | 3.559   | 4831866064556224 |
 
 - **Recorded:** 2026-05-19  
 - **Hardware:** Apple Silicon (darwin 24.x), local run via `./run-bench.sh` with default query params.  
-- **Interpretation:** On this sample, **Rust** had the lowest median time. Among Node frameworks, **Express** was fastest on median; **NestJS** added the most overhead (~3.68s median vs ~3.57s for Express). **Fastify** sat between Express and NestJS. Go’s `net/http` matched Node’s median band with a more stable average. TypeScript **averages** can exceed the median if an occasional slow request (GC, scheduling) appears in the post–warm-up window.
+- **Interpretation:** On this sample, **Rust** had the lowest median time. Among Node frameworks, **Koa** had the best median (~3.55s), closely followed by **NestJS** and **Fastify**; **Express** was slowest on median in this run. Go’s `net/http` matched Node’s median band with a more stable average. TypeScript **averages** can exceed the median if an occasional slow request (GC, scheduling) appears in the post–warm-up window.
 
 ## Caveats
 
 - Single machine, mostly **single-request-at-a-time** CPU work (Rust runs the compute on a blocking thread pool so the async runtime stays responsive).
 - Not a substitute for full load testing (concurrency, connection pools, etc.).
 - Rebuild **Go** after changing `main.go` before benchmarking so you are not running an old `benchmark-go` binary.
-- Each TypeScript server is a separate package (`typescript/`, `typescript-fastify/`, `typescript-nestjs/`); install and build each independently.
+- Each TypeScript server is a separate package (`typescript/`, `typescript-fastify/`, `typescript-nestjs/`, `typescript-koa/`); install and build each independently.

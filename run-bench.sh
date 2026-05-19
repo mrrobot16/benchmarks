@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Requires: curl, jq. Assumes servers on 3001 (TS Express), 3004 (TS Fastify), 3005 (TS NestJS), 3002 (Rust), 3003 (Go).
+# Requires: curl, jq. Assumes servers on 3001 (TS Express), 3004 (TS Fastify), 3005 (TS NestJS), 3006 (TS Koa), 3002 (Rust), 3003 (Go).
 
 for cmd in curl jq; do
   if ! command -v "$cmd" &>/dev/null; then
@@ -56,6 +56,7 @@ declare -a rows
 rows+=("$(bench_one "TypeScript (Express)" "http://127.0.0.1:3001/compute")")
 rows+=("$(bench_one "TypeScript (Fastify)" "http://127.0.0.1:3004/compute")")
 rows+=("$(bench_one "TypeScript (NestJS)" "http://127.0.0.1:3005/compute")")
+rows+=("$(bench_one "TypeScript (Koa)" "http://127.0.0.1:3006/compute")")
 rows+=("$(bench_one "Rust" "http://127.0.0.1:3002/compute")")
 rows+=("$(bench_one "Go" "http://127.0.0.1:3003/compute")")
 
