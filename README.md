@@ -13,6 +13,7 @@ HTTP servers expose `GET /compute` with the same **deterministic CPU-heavy workl
 | `typescript-nestjs/`  | TypeScript (Node)  | NestJS (Express adapter) | 3005 | `typescript-nestjs`    |
 | `typescript-koa/`     | TypeScript (Node)  | Koa (no router plugins)  | 3006 | `typescript-koa`       |
 | `typescript-hono/`    | TypeScript (Node)  | Hono (`@hono/node-server`) | 3007 | `typescript-hono`      |
+| `bun/`                | TypeScript (Bun)   | `Bun.serve` (built-in) | 3008 | `bun`                  |
 | `rust/`               | Rust               | Axum                   | 3002 | `rust`                 |
 | `go/`                 | Go                 | `net/http`             | 3003 | `go`                   |
 
@@ -56,7 +57,7 @@ Start a single server, then:
 curl -sS 'http://127.0.0.1:3004/compute' | jq '{language, elapsed_seconds, checksum}'
 ```
 
-Change the port to **3001** (Express), **3004** (Fastify), **3005** (NestJS), **3006** (Koa), **3007** (Hono), **3002** (Rust), or **3003** (Go) as needed.
+Change the port to **3001** (Express), **3004** (Fastify), **3005** (NestJS), **3006** (Koa), **3007** (Hono), **3008** (Bun), **3002** (Rust), or **3003** (Go) as needed.
 
 ## Run each server
 
@@ -111,6 +112,17 @@ node dist/server.js
 # or: npm run dev
 ```
 
+### Bun (`Bun.serve`) — port 3008
+
+No build step or framework — Bun runs the `.ts` file directly and the HTTP server is built in.
+
+```bash
+cd bun
+bun install
+bun run start
+# or: bun run dev
+```
+
 ### Rust (Axum) — port 3002
 
 Use a **release** build (debug is much slower). If your environment sets `CARGO_TARGET_DIR` (e.g. some IDE sandboxes), pin the binary path:
@@ -133,7 +145,7 @@ go build -o benchmark-go .
 
 ## Benchmark script
 
-Requires `curl` and `jq`. Start **all seven servers** (Express 3001, Fastify 3004, NestJS 3005, Koa 3006, Hono 3007, Rust 3002, Go 3003), then from the repo root:
+Requires `curl` and `jq`. Start **all eight servers** (Express 3001, Fastify 3004, NestJS 3005, Koa 3006, Hono 3007, Bun 3008, Rust 3002, Go 3003), then from the repo root:
 
 ```bash
 chmod +x run-bench.sh   # once
@@ -148,17 +160,18 @@ From `./run-bench.sh` (all seven servers, default query params):
 
 | Server               | Min (s) | Median (s) | Avg (s) | Checksum        |
 | -------------------- | ------- | ---------- | ------- | --------------- |
-| TypeScript (Express) | 3.547   | 3.554      | 6.251   | 4831866064556224 |
-| TypeScript (Fastify) | 3.557   | 3.634      | 6.374   | 4831866064556224 |
-| TypeScript (NestJS)  | 3.543   | 3.554      | 6.246   | 4831866064556224 |
-| TypeScript (Koa)     | 3.542   | 3.553      | 6.234   | 4831866064556224 |
-| TypeScript (Hono)    | 3.588   | 3.611      | 6.325   | 4831866064556224 |
-| Rust                 | 1.958   | 1.986      | 1.986   | 4831866064556224 |
-| Go                   | 3.549   | 3.563      | 3.579   | 4831866064556224 |
+| TypeScript (Express) | 3.573   | 3.584      | 6.304   | 4831866064556224 |
+| TypeScript (Fastify) | 3.585   | 3.616      | 6.290   | 4831866064556224 |
+| TypeScript (NestJS)  | 3.562   | 3.580      | 6.262   | 4831866064556224 |
+| TypeScript (Koa)     | 3.569   | 3.576      | 6.292   | 4831866064556224 |
+| TypeScript (Hono)    | 3.573   | 3.577      | 6.287   | 4831866064556224 |
+| Bun (Bun.serve)      | 5.596   | 5.602      | 5.605   | 4831866064556224 |
+| Rust                 | 1.965   | 1.967      | 1.970   | 4831866064556224 |
+| Go                   | 3.554   | 3.563      | 3.561   | 4831866064556224 |
 
-- **Recorded:** 2026-05-19  
+- **Recorded:** 2026-06-09  
 - **Hardware:** Apple Silicon (darwin 24.x), local run via `./run-bench.sh` with default query params.  
-- **Interpretation:** On this sample, **Rust** had the lowest median time. Among Node frameworks, **Koa** and **NestJS** tied for the best median (~3.55s); **Hono** and **Fastify** were slightly slower on median (~3.61–3.63s). Go’s `net/http` matched Node’s median band with a more stable average. TypeScript **averages** can exceed the median if an occasional slow request (GC, scheduling) appears in the post–warm-up window.
+- **Interpretation:** On this sample, **Rust** again had the lowest median time (~1.97s). The Node frameworks (Express, Fastify, NestJS, Koa, Hono) clustered tightly around a ~3.58s median, and Go’s `net/http` matched that band (~3.56s) with a more stable average. **Bun** was notably slower on this integer-heavy workload (~5.60s median) but very consistent — its average tracked its median closely, whereas the Node servers show **averages** well above their medians (~6.3s) because occasional slow requests (GC, scheduling) land in the post–warm-up window.
 
 ## Caveats
 
